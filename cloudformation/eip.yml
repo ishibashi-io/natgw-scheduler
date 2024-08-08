@@ -1,0 +1,28 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "VPC and Subnet CloudFormation Template"
+Parameters:
+  Env:
+    Description: Environment
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: ^[a-zA-Z][-a-zA-Z0-9]*$
+    Default: dev
+
+Resources:
+  ElasticIP:
+    Type: AWS::EC2::EIP
+    Properties:
+      Domain: vpc
+      Tags:
+        - Key: Name
+          Value: !Sub "${Env}-natgw-eip"
+        - Key: Env
+          Value: !Ref Env
+
+Outputs:
+  ElasticIP:
+    Description: "Elastic IP for NAT Gateway"
+    Value: !GetAtt ElasticIP.AllocationId
+    Export:
+      Name: !Sub "${Env}ElasticIPAllocationId"

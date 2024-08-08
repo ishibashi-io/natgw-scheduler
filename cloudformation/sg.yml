@@ -1,0 +1,32 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Security Group CloudFormation Template"
+
+Parameters:
+  Env:
+    Description: Environment
+    Type: String
+    MinLength: 1
+    MaxLength: 255
+    AllowedPattern: ^[a-zA-Z][-a-zA-Z0-9]*$
+    Default: dev
+
+Resources:
+  SecurityGroupLambda:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${Env}-sg-lambda"
+      GroupDescription: security group for lambda
+      VpcId:
+        Fn::ImportValue: !Sub "${Env}VPCID"
+      Tags:
+        - Key: Name
+          Value: !Sub "${Env}-sg-lambda"
+        - Key: Env
+          Value: !Ref Env
+
+Outputs:
+  SecurityGroupLambda:
+    Description: "Security Group for Lambda"
+    Value: !Ref SecurityGroupLambda
+    Export:
+      Name: !Sub "${Env}SecurityGroupLambda"

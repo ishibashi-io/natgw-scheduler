@@ -1,0 +1,122 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  natgw-scheduler
+
+  Sample SAM Template for natgw-scheduler
+
+Parameters:
+  Env:
+    Type: String
+    Default: dev
+    AllowedValues:
+      - dev
+      - stg
+      - prod
+    Description: Environments
+
+Globals:
+  Function:
+    Environment:
+      Variables:
+        PUBLIC_SUBNET_ID:
+          Fn::ImportValue: !Sub "${Env}PublicSubnet1"
+        RTB_ID:
+          Fn::ImportValue: !Sub "${Env}PrivateRouteTable"
+        EIP_ALLOCATION_ID:
+          Fn::ImportValue: !Sub "${Env}ElasticIPAllocationId"
+    Runtime: python3.11
+    Architectures:
+      - x86_64
+    LoggingConfig:
+      LogFormat: JSON
+Resources:
+  UpNatGWFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 180
+      FunctionName: !Sub "${Env}-nat-up"
+      CodeUri: natgw_scheduler/
+      Handler: up.lambda_handler
+      Role: !GetAtt FunctionRole.Arn
+      Events:
+        Schedule1:
+          Type: ScheduleV2
+          Properties:
+            Name: !Sub "${Env}-nat-up-schedule"
+            ScheduleExpression: "cron(50 6 * * ? *)"
+            ScheduleExpressionTimezone: "Asia/Tokyo"
+  DownNatGWFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Timeout: 180
+      FunctionName: !Sub "${Env}-nat-down"
+      CodeUri: natgw_scheduler/
+      Handler: down.lambda_handler
+      Role: !GetAtt FunctionRole.Arn
+      Events:
+        Schedule1:
+          Type: ScheduleV2
+          Properties:
+            Name: !Sub "${Env}-nat-down-schedule"
+            ScheduleExpression: "cron(10 23 * * ? *)"
+            ScheduleExpressionTimezone: "Asia/Tokyo"
+  HelloWorldFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Sub "${Env}-hello-world"
+      CodeUri: hello_world/
+      Handler: app.lambda_handler
+      VpcConfig:
+        SubnetIds:
+          - Fn::ImportValue: !Sub "${Env}PrivateSubnet1"
+          - Fn::ImportValue: !Sub "${Env}PrivateSubnet2"
+        SecurityGroupIds:
+          - Fn::ImportValue: !Sub "${Env}SecurityGroupLambda"
+
+  FunctionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: !Sub "${Env}-natgw-scheduler-execution-role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: lambda.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: !Sub ${Env}-natgw-scheduler-policy
+          PolicyDocument:
+            Version: "2012-10-17"
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "secretsmanager:GetSecretValue"
+                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:*"
+              - Effect: Allow
+                Action:
+                  - logs:CreateLogGroup
+                  - logs:CreateLogStream
+                  - logs:PutLogEvents
+                  - logs:TagResource
+                Resource: !Sub arn:aws:logs:${AWS::Region}:${AWS::AccountId}:*
+              - Effect: Allow
+                Action:
+                  - ec2:CreateRoute
+                  - ec2:DeleteRoute
+                  - ec2:CreateNatGateway
+                  - ec2:DescribeNatGateways
+                  - ec2:DeleteNatGateway
+                Resource: "*"
+
+Outputs:
+  NatUpFunction:
+    Description: Nat Up Lambda Function ARN
+    Value: !GetAtt NatUpFunction.Arn
+  NatDownFunction:
+    Description: Nat Down Lambda Function ARN
+    Value: !GetAtt NatDownFunction.Arn
+  FunctionRole:
+    Description: Implicit IAM Role created for Hello World function
+    Value: !GetAtt FunctionRole.Arn
