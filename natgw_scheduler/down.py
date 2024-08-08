@@ -15,7 +15,6 @@ def lambda_handler(event, context):
     filters = [{'Name': 'state', 'Values': ['available']}]
     response = client.describe_nat_gateways(Filters=filters)
     for rec in response['NatGateways']:
-        print(rec)
         natgw = rec['NatGatewayId']
         client.delete_nat_gateway(NatGatewayId=natgw)
 
