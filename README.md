@@ -45,4 +45,7 @@ To delete the sample application that you created, use the AWS CLI. Assuming you
 
 ```bash
 sam delete --stack-name "natgw-scheduler"
+rain rm dev-eip
+rain rm dev-sg
+rain rm dev-network
 ```
