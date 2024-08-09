@@ -92,10 +92,6 @@ Resources:
             Statement:
               - Effect: Allow
                 Action:
-                  - "secretsmanager:GetSecretValue"
-                Resource: !Sub "arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:*"
-              - Effect: Allow
-                Action:
                   - logs:CreateLogGroup
                   - logs:CreateLogStream
                   - logs:PutLogEvents
@@ -109,14 +105,3 @@ Resources:
                   - ec2:DescribeNatGateways
                   - ec2:DeleteNatGateway
                 Resource: "*"
-
-Outputs:
-  NatUpFunction:
-    Description: Nat Up Lambda Function ARN
-    Value: !GetAtt NatUpFunction.Arn
-  NatDownFunction:
-    Description: Nat Down Lambda Function ARN
-    Value: !GetAtt NatDownFunction.Arn
-  FunctionRole:
-    Description: Implicit IAM Role created for Hello World function
-    Value: !GetAtt FunctionRole.Arn
