@@ -1,9 +1,6 @@
 import json
 import requests
 
-# import requests
-
-
 def lambda_handler(event, context):
     response = requests.get("https://www.industry-one.com/")
     if response.status_code != 200:
